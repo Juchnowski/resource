@@ -72,6 +72,14 @@ template<typename> struct DEBUG_TEMPLATE;
 //template<int N>
 //using Policy = template typename PolicyImpl<N>::Inner;
 
+namespace kq::resource::traits
+{
+
+template<typename Trait>
+concept bool Nullable = Trait::is_nullable;
+
+} // kq::resource::traits
+
 namespace kq::resource::storage
 {
 
@@ -94,8 +102,8 @@ struct automatic_storage
 
 	struct is_valid_detail
 	{
-		template<typename Handle>
-		std::enable_if_t<traits::is_nullable, bool> operator()(Handle&& h) const noexcept {
+		template<traits::Nullable T>
+		bool operator()(T&& h) const noexcept {
 			return h == traits::null;
 		}
 		bool operator()(...) const noexcept {
@@ -154,7 +162,7 @@ struct function_deleter
 
 	struct ensure_nullify{
 		template<typename StoragePolicy>
-		auto operator()(StoragePolicy* s) const noexcept(noexcept(s->nullify())) -> decltype(s->nullify()){
+		auto operator()(StoragePolicy* s) const noexcept(noexcept(s->nullify())) {
 			return s->nullify();
 		}
 	};
@@ -195,7 +203,7 @@ struct default_copy
 template<typename T>
 void please_delete(T* ptr)
 {
-	DBG(ptr);
+	cout << "please_delete: " << ptr << endl;
 	delete ptr;
 }
 

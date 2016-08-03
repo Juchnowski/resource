@@ -64,16 +64,113 @@ void del(void* ptr){
 	free(ptr);
 }
 
+
+template<typename> struct DEBUG_TEMPLATE;
+
 #include "resource/resource.hpp"
 
 //template<int N>
 //using Policy = template typename PolicyImpl<N>::Inner;
 
+namespace kq::resource::storage
+{
+
+template<typename T, typename Resource>
+struct automatic_storage
+{
+	using traits = traits::get_traits<T>;
+	using type = typename traits::type;
+	using handle = typename traits::handle;
+
+	automatic_storage(handle h) : data_(h) {}
+
+	handle get() const noexcept {
+		return data_;
+	}
+
+	decltype(auto) operator*() const {
+		return traits::deref(data_);
+	}
+
+	void nullify() noexcept {
+		data_ = traits::null;
+	}
+
+//	aligned_storage
+
+private:
+	handle data_;
+};
+
+
+template<typename T, typename Resource>
+using default_storage = automatic_storage<T,Resource>;
+
+} // kq::resource::storage
+
+namespace kq::resource::cleanup
+{
+
+template<typename T, typename Resource>
+struct default_deleter
+{
+	using traits = traits::get_traits<T>;
+	using type = typename traits::type;
+
+	void clean(){
+		using storage = typename Resource::storage;
+		auto& full_type = static_cast<Resource&>(*this);
+		delete full_type.storage::get();
+		full_type.storage::nullify();
+	}
+};
+
+template<typename Func, Func* Function>
+struct function_deleter
+{
+	template<typename T, typename Resource>
+	struct impl
+	{
+		void clean(){
+			using storage = typename Resource::storage;
+			auto& full_type = static_cast<Resource&>(*this);
+			Function(full_type.storage::get());
+			full_type.storage::nullify();
+		}
+	};
+};
+
+} // kq::resource::cleanup
+
+namespace kq::resource::copy
+{
+
+template<typename T, typename Resource>
+struct default_copy
+{
+	using traits = traits::get_traits<T>;
+	using type = typename traits::type;
+
+//	void operator()(typename traits::handle ptr){
+//		using storage = typename Resource::storage;
+//	}
+};
+
+} // kq::resource::copy
+
+template<typename T>
+void please_delete(T* ptr)
+{
+	DBG(ptr);
+	delete ptr;
+}
+
 auto main() -> int
 {
 	using namespace kq::resource;
-	using R = resource<int, PolicyImpl<0>::Inner, PolicyImpl<1>::Inner, PolicyImpl<2>::Inner>;
-	R r{42};
+	using deleter = cleanup::function_deleter<void(int*), &please_delete>;
+	using R = resource<int, deleter::impl, storage::default_storage, PolicyImpl<2>::Inner>;
+	R r{new int(42)};
 }
 
 //auto main() -> int

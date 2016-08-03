@@ -3,10 +3,7 @@
 
 #include <type_traits>
 
-namespace kq
-{
-
-namespace resource
+namespace kq::resource
 {
 
 namespace traits
@@ -17,6 +14,11 @@ struct default_traits
 {
 	using type = T;
 	using handle = type*;
+	static constexpr handle null = nullptr;
+
+	static type deref(handle h) {
+		return *h;
+	}
 };
 
 namespace detail
@@ -58,41 +60,43 @@ using get_traits = typename detail::get_traits<T>::type;
 
 template<
 	typename Type,
-	template <typename> typename CleanupPolicy,
-	template <typename> typename StoragePolicy,
-	template <typename> typename CopyPolicy
+	template <typename,typename> typename CleanupPolicy,
+	template <typename,typename> typename StoragePolicy,
+	template <typename,typename> typename CopyPolicy
 >
 struct resource:
-		CleanupPolicy<resource<Type,CleanupPolicy,CopyPolicy,StoragePolicy>>,
-		StoragePolicy<resource<Type,CleanupPolicy,CopyPolicy,StoragePolicy>>,
-		CopyPolicy<resource<Type,CleanupPolicy,CopyPolicy,StoragePolicy>>
+		StoragePolicy<Type,resource<Type,CleanupPolicy,StoragePolicy,CopyPolicy>>,
+		CleanupPolicy<Type,resource<Type,CleanupPolicy,StoragePolicy,CopyPolicy>>,
+		CopyPolicy<Type,resource<Type,CleanupPolicy,StoragePolicy,CopyPolicy>>
 {
-	using cleanup = CleanupPolicy<resource<Type,CleanupPolicy,CopyPolicy,StoragePolicy>>;
-	using copy = CopyPolicy<resource<Type,CleanupPolicy,CopyPolicy,StoragePolicy>>;
-	using storage = StoragePolicy<resource<Type,CleanupPolicy,CopyPolicy,StoragePolicy>>;
+	using cleanup = CleanupPolicy<Type,resource<Type,CleanupPolicy,StoragePolicy,CopyPolicy>>;
+	using copy = CopyPolicy<Type,resource<Type,CleanupPolicy,StoragePolicy,CopyPolicy>>;
+	using storage = StoragePolicy<Type,resource<Type,CleanupPolicy,StoragePolicy,CopyPolicy>>;
 	using traits = traits::get_traits<Type>;
 	using type = typename traits::type;
 
-	template<typename T, typename Cleanup = cleanup, typename Storage = storage, typename Copy = copy>
-	explicit resource(T&& t, Cleanup&& cl = cleanup{}, Storage&& s = storage{}, Copy&& cp = copy{}):
+	template<typename T, typename Cleanup = cleanup, typename Copy = copy>
+	explicit resource(T&& t, Cleanup&& cl = cleanup{}, Copy&& cp = copy{}):
+		storage{std::forward<T>(t)},
 		cleanup{std::forward<Cleanup>(cl)},
-		storage{std::forward<Storage>(s)},
 		copy{std::forward<Copy>(cp)}
 	{}
+
+	~resource() {
+		cleanup::clean();
+	}
 };
 
-template<int N, typename T> struct PolicyN{};
+template<int N, typename T, typename U> struct PolicyN{};
 
 template<int N>
 struct PolicyImpl{
-	template<typename T>
+	template<typename T, typename U>
 	struct Inner{
-		using type = PolicyN<N,T>;
+		using type = PolicyN<N,T,U>;
 	};
 };
 
-} // namespace resource
-
-} // namespace kq
+} // namespace kq::resource
 
 #endif // RESOURCE_HPP

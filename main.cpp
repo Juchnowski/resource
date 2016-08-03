@@ -92,7 +92,23 @@ struct automatic_storage
 		return traits::deref(data_);
 	}
 
-	void nullify() noexcept {
+	struct is_valid_detail
+	{
+		template<typename Handle>
+		std::enable_if_t<traits::is_nullable, bool> operator()(Handle&& h) const noexcept {
+			return h == traits::null;
+		}
+		bool operator()(...) const noexcept {
+			return true;
+		}
+	};
+
+	bool is_valid() const noexcept {
+		return is_valid_detail{}(data_);
+	}
+
+	template<typename ImplDetail = std::enable_if_t<traits::is_nullable, void>>
+	void nullify(ImplDetail* = nullptr) noexcept {
 		data_ = traits::null;
 	}
 
@@ -125,9 +141,24 @@ struct default_deleter
 	}
 };
 
-template<typename Func, Func* Function>
+template<typename Func, Func* Function, bool RequireNullable = false>
 struct function_deleter
 {
+	struct maybe_nullify{
+		template<typename StoragePolicy>
+		auto operator()(StoragePolicy* s) const noexcept(noexcept(s->nullify())) -> decltype(s->nullify()){
+			return s->nullify();
+		}
+		void operator()(...) const noexcept {}
+	};
+
+	struct ensure_nullify{
+		template<typename StoragePolicy>
+		auto operator()(StoragePolicy* s) const noexcept(noexcept(s->nullify())) -> decltype(s->nullify()){
+			return s->nullify();
+		}
+	};
+
 	template<typename T, typename Resource>
 	struct impl
 	{
@@ -135,7 +166,10 @@ struct function_deleter
 			using storage = typename Resource::storage;
 			auto& full_type = static_cast<Resource&>(*this);
 			Function(full_type.storage::get());
-			full_type.storage::nullify();
+
+			using nullifier = std::conditional_t<RequireNullable, ensure_nullify, maybe_nullify>;
+
+			nullifier{}(static_cast<storage*>(&full_type));
 		}
 	};
 };
@@ -171,6 +205,9 @@ auto main() -> int
 	using deleter = cleanup::function_deleter<void(int*), &please_delete>;
 	using R = resource<int, deleter::impl, storage::default_storage, PolicyImpl<2>::Inner>;
 	R r{new int(42)};
+
+
+
 }
 
 //auto main() -> int

@@ -14,6 +14,7 @@ struct default_traits
 {
 	using type = T;
 	using handle = type*;
+	static constexpr bool is_nullable = true;
 	static constexpr handle null = nullptr;
 
 	static type deref(handle h) {

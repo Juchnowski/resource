@@ -73,9 +73,9 @@ template<
 	template <typename,typename> typename CleanupPolicy,
 	template <typename,typename> typename StoragePolicy,
 	template <typename,typename> typename CopyPolicy
-    >
+>
 struct resource_helper {
-        using This = resource_helper<Type, CleanupPolicy, StoragePolicy, CopyPolicy>;
+	using This = resource_helper<Type, CleanupPolicy, StoragePolicy, CopyPolicy>;
 
 	using Cleanup = CleanupPolicy<Type,resource<Type,CleanupPolicy,StoragePolicy,CopyPolicy, This>>;
 	using Copy = CopyPolicy<Type,resource<Type,CleanupPolicy,StoragePolicy,CopyPolicy, This>>;
@@ -136,7 +136,8 @@ struct resource:
 		return *this;
 	}
 
-	~resource() {
+	~resource() noexcept(noexcept(std::declval<resource>().cleanup::clean()))
+	{
 		cleanup::clean();
 	}
 };

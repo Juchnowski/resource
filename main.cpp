@@ -170,7 +170,9 @@ struct function_deleter
 	template<typename T, typename Resource>
 	struct impl
 	{
-		void clean(){
+		using traits = traits::get_traits<T>;
+
+		void clean() noexcept(noexcept(Function(std::declval<typename traits::handle>()))){
 			using storage = typename Resource::storage;
 			auto& full_type = static_cast<Resource&>(*this);
 			if(full_type.storage::is_valid()){

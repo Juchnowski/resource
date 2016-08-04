@@ -102,8 +102,7 @@ struct automatic_storage
 
 	struct is_valid_detail
 	{
-		template<traits::Nullable T>
-		bool operator()(T&& h) const noexcept {
+		bool operator()(kq::resource::traits::Nullable&& h) const noexcept {
 			return h == traits::null;
 		}
 		bool operator()(...) const noexcept {
@@ -193,9 +192,41 @@ struct default_copy
 	using traits = traits::get_traits<T>;
 	using type = typename traits::type;
 
-//	void operator()(typename traits::handle ptr){
-//		using storage = typename Resource::storage;
-//	}
+	using cleanup = typename Resource::cleanup;
+	using storage = typename Resource::storage;
+
+	static cleanup copy_cleanup(cleanup const& c) noexcept(noexcept(cleanup::cleanup(c))) {
+		return c;
+	}
+	static storage copy_storage(storage const& s) noexcept(noexcept(storage::storage(s))) {
+		return s;
+	}
+
+	static cleanup copy_cleanup(cleanup&& c) noexcept(noexcept(cleanup::cleanup(std::move(c)))) {
+		return std::move(c);
+	}
+	static storage copy_storage(storage&& s) noexcept(noexcept(storage::storage(std::move(s)))) {
+		return std::move(s);
+	}
+
+	static void swap(Resource& l, Resource& r) noexcept(false) {
+		using std::swap;
+		// Resource::copy may be a class derived from default_copy
+		using copy = typename Resource::copy;
+		swap(static_cast<storage&>(l),static_cast<storage&>(r));
+		swap(static_cast<cleanup&>(l),static_cast<cleanup&>(r));
+		swap(static_cast<copy&>(l),static_cast<copy&>(r));
+	}
+};
+
+template<typename T, typename Resource>
+struct no_copy_yes_move : default_copy<T, Resource>
+{
+	using cleanup = typename Resource::cleanup;
+	using storage = typename Resource::storage;
+
+	static cleanup copy_cleanup(cleanup const& c) = delete;
+	static storage copy_storage(storage const& s) = delete;
 };
 
 } // kq::resource::copy

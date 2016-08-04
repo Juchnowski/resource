@@ -73,6 +73,7 @@ struct resource:
 	using cleanup = CleanupPolicy<Type,resource<Type,CleanupPolicy,StoragePolicy,CopyPolicy>>;
 	using copy = CopyPolicy<Type,resource<Type,CleanupPolicy,StoragePolicy,CopyPolicy>>;
 	using storage = StoragePolicy<Type,resource<Type,CleanupPolicy,StoragePolicy,CopyPolicy>>;
+
 	using traits = traits::get_traits<Type>;
 	using type = typename traits::type;
 
@@ -83,10 +84,49 @@ struct resource:
 		copy{std::forward<Copy>(cp)}
 	{}
 
+	resource(resource const& other):
+		storage(copy::copy_storage(other)),
+		cleanup(copy::copy_cleanup(other)),
+		copy(other)
+	{}
+
+	resource(resource&& other):
+		storage(copy::move_storage(std::move(static_cast<storage>(*this)))),
+		storage(copy::move_cleanup(std::move(static_cast<cleanup>(*this)))),
+		storage(std::move(static_cast<copy>(*this)))
+	{}
+
+	resource& operator=(resource const& other) noexcept(false)
+	{
+		*this = copy::copy_storage(other);
+		*this = copy::copy_cleanup(other);
+		*this = static_cast<copy const&>(other);
+		return *this;
+	}
+
+	resource& operator=(resource&& other) noexcept(false)
+	{
+		*this = copy::move_storage(other);
+		*this = copy::move_cleanup(other);
+		*this = static_cast<copy&&>(other);
+		return *this;
+	}
+
 	~resource() {
 		cleanup::clean();
 	}
 };
+
+template<
+	typename T,
+	template <typename,typename> typename Cleanup,
+	template <typename,typename> typename Storage,
+	template <typename,typename> typename Copy
+>
+void swap(resource<T,Cleanup, Storage, Copy>& l, resource<T,Cleanup, Storage, Copy>& r){
+	resource<T,Cleanup, Storage, Copy>::copy::swap(l, r);
+}
+
 
 template<int N, typename T, typename U> struct PolicyN{};
 

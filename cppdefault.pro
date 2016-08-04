@@ -2,7 +2,7 @@ QT += core
 QT -= gui
 
 #CONFIG += c++11
-QMAKE_CXXFLAGS += -std=c++17
+QMAKE_CXXFLAGS += -std=c++17 -fconcepts
 
 TARGET = cppdefault
 CONFIG += console

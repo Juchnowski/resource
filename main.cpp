@@ -103,8 +103,8 @@ struct automatic_storage
 
 	struct is_valid_detail
 	{
-		bool operator()(kq::resource::traits::Nullable&& h) const noexcept {
-			return h == traits::null;
+		bool operator()(kq::resource::traits::Nullable&&, auto&& handle) const noexcept {
+			return handle != traits::null;
 		}
 		bool operator()(...) const noexcept {
 			return true;
@@ -112,7 +112,7 @@ struct automatic_storage
 	};
 
 	bool is_valid() const noexcept {
-		return is_valid_detail{}(data_);
+		return is_valid_detail{}(traits{}, data_);
 	}
 
 	template<typename ImplDetail = std::enable_if_t<traits::is_nullable, void>>

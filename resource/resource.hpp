@@ -60,19 +60,43 @@ using get_traits = typename detail::get_traits<T>::type;
 } // traits
 
 template<
+	typename,
+	template <typename,typename> typename,
+	template <typename,typename> typename,
+	template <typename,typename> typename,
+	typename>
+struct resource;
+
+
+template<
 	typename Type,
 	template <typename,typename> typename CleanupPolicy,
 	template <typename,typename> typename StoragePolicy,
 	template <typename,typename> typename CopyPolicy
+    >
+struct resource_helper {
+        using This = resource_helper<Type, CleanupPolicy, StoragePolicy, CopyPolicy>;
+
+	using Cleanup = CleanupPolicy<Type,resource<Type,CleanupPolicy,StoragePolicy,CopyPolicy, This>>;
+	using Copy = CopyPolicy<Type,resource<Type,CleanupPolicy,StoragePolicy,CopyPolicy, This>>;
+	using Storage = StoragePolicy<Type,resource<Type,CleanupPolicy,StoragePolicy,CopyPolicy, This>>;
+};
+
+template<
+	typename Type,
+	template <typename,typename> typename CleanupPolicy,
+	template <typename,typename> typename StoragePolicy,
+	template <typename,typename> typename CopyPolicy,
+	typename Helper = resource_helper<Type, CleanupPolicy, StoragePolicy, CopyPolicy>
 >
 struct resource:
-		StoragePolicy<Type,resource<Type,CleanupPolicy,StoragePolicy,CopyPolicy>>,
-		CleanupPolicy<Type,resource<Type,CleanupPolicy,StoragePolicy,CopyPolicy>>,
-		CopyPolicy<Type,resource<Type,CleanupPolicy,StoragePolicy,CopyPolicy>>
+		Helper::Storage,
+		Helper::Cleanup,
+		Helper::Copy
 {
-	using cleanup = CleanupPolicy<Type,resource<Type,CleanupPolicy,StoragePolicy,CopyPolicy>>;
-	using copy = CopyPolicy<Type,resource<Type,CleanupPolicy,StoragePolicy,CopyPolicy>>;
-	using storage = StoragePolicy<Type,resource<Type,CleanupPolicy,StoragePolicy,CopyPolicy>>;
+	using cleanup = typename Helper::Cleanup;
+	using copy = typename Helper::Copy;
+	using storage = typename Helper::Storage;
 
 	using traits = traits::get_traits<Type>;
 	using type = typename traits::type;

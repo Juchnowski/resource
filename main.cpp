@@ -172,7 +172,9 @@ struct function_deleter
 		void clean(){
 			using storage = typename Resource::storage;
 			auto& full_type = static_cast<Resource&>(*this);
-			Function(full_type.storage::get());
+			if(full_type.storage::is_valid()){
+				Function(full_type.storage::get());
+			}
 
 			using nullifier = std::conditional_t<RequireNullable, ensure_nullify, maybe_nullify>;
 
@@ -192,27 +194,37 @@ struct default_copy
 	using traits = traits::get_traits<T>;
 	using type = typename traits::type;
 
-	using cleanup = typename Resource::cleanup;
-	using storage = typename Resource::storage;
+//	using cleanup = typename Resource::cleanup;
+//	using storage = typename Resource::storage;
 
-	static cleanup copy_cleanup(cleanup const& c) noexcept(noexcept(cleanup::cleanup(c))) {
+	template<typename Cleanup>
+	static auto
+	copy_cleanup(Cleanup const& c) noexcept(noexcept(decltype(c)(c))) {
+		static_assert(std::is_same<Cleanup, typename Resource::cleanup>::value);
 		return c;
 	}
-	static storage copy_storage(storage const& s) noexcept(noexcept(storage::storage(s))) {
+	template<typename Storage>
+	static auto
+	copy_storage(Storage const& s) noexcept(noexcept(decltype(s)(s))) {
+		static_assert(std::is_same<Storage, typename Resource::storage>::value);
 		return s;
 	}
 
-	static cleanup copy_cleanup(cleanup&& c) noexcept(noexcept(cleanup::cleanup(std::move(c)))) {
-		return std::move(c);
-	}
-	static storage copy_storage(storage&& s) noexcept(noexcept(storage::storage(std::move(s)))) {
-		return std::move(s);
-	}
+//	static cleanup copy_cleanup(cleanup&& c) noexcept(noexcept(cleanup::cleanup(std::move(c)))) {
+//		return std::move(c);
+//	}
+//	static storage copy_storage(storage&& s) noexcept(noexcept(storage::storage(std::move(s)))) {
+//		return std::move(s);
+//	}
 
 	static void swap(Resource& l, Resource& r) noexcept(false) {
 		using std::swap;
-		// Resource::copy may be a class derived from default_copy
+
+		using cleanup = typename Resource::cleanup;
+		using storage = typename Resource::storage;
 		using copy = typename Resource::copy;
+		// Resource::copy may be a class derived from default_copy
+
 		swap(static_cast<storage&>(l),static_cast<storage&>(r));
 		swap(static_cast<cleanup&>(l),static_cast<cleanup&>(r));
 		swap(static_cast<copy&>(l),static_cast<copy&>(r));
@@ -242,10 +254,12 @@ auto main() -> int
 {
 	using namespace kq::resource;
 	using deleter = cleanup::function_deleter<void(int*), &please_delete>;
-	using R = resource<int, deleter::impl, storage::default_storage, PolicyImpl<2>::Inner>;
+	using R = resource<int, deleter::impl, storage::default_storage, copy::default_copy>;
 	R r{new int(42)};
 
+	R r2{nullptr};
 
+	r2 = r;
 
 }
 

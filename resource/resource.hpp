@@ -85,8 +85,8 @@ struct resource:
 	{}
 
 	resource(resource const& other):
-		storage(copy::copy_storage(other)),
-		cleanup(copy::copy_cleanup(other)),
+		storage(copy::copy_storage(static_cast<storage&>(other))),
+		cleanup(copy::copy_cleanup(static_cast<cleanup&>(other))),
 		copy(other)
 	{}
 
@@ -98,9 +98,9 @@ struct resource:
 
 	resource& operator=(resource const& other) noexcept(false)
 	{
-		*this = copy::copy_storage(other);
-		*this = copy::copy_cleanup(other);
-		*this = static_cast<copy const&>(other);
+		static_cast<storage&>(*this) = copy::copy_storage(static_cast<storage const&>(other));
+		static_cast<cleanup&>(*this) = copy::copy_cleanup(static_cast<cleanup const&>(other));
+		static_cast<copy&>(*this) = static_cast<copy const&>(other);
 		return *this;
 	}
 

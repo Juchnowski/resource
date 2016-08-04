@@ -91,8 +91,8 @@ struct resource:
 	{}
 
 	resource(resource&& other):
-		storage(copy::move_storage(std::move(static_cast<storage>(*this)))),
-		storage(copy::move_cleanup(std::move(static_cast<cleanup>(*this)))),
+		storage(copy::move_storage(static_cast<storage&&>(*this))),
+		storage(copy::move_cleanup(static_cast<cleanup&&>(*this))),
 		storage(std::move(static_cast<copy>(*this)))
 	{}
 
@@ -106,9 +106,9 @@ struct resource:
 
 	resource& operator=(resource&& other) noexcept(false)
 	{
-		*this = copy::move_storage(other);
-		*this = copy::move_cleanup(other);
-		*this = static_cast<copy&&>(other);
+		static_cast<storage&>(*this) = copy::move_storage(static_cast<storage&&>(other));
+		static_cast<cleanup&>(*this) = copy::move_cleanup(static_cast<cleanup&&>(other));
+		static_cast<copy&>(*this) = static_cast<copy&&>(other);
 		return *this;
 	}
 

@@ -64,6 +64,7 @@ void del(void* ptr){
 	free(ptr);
 }
 
+#include <boost/scope_exit.hpp>
 
 template<typename> struct DEBUG_TEMPLATE;
 
@@ -210,12 +211,18 @@ struct default_copy
 		return s;
 	}
 
-//	static cleanup copy_cleanup(cleanup&& c) noexcept(noexcept(cleanup::cleanup(std::move(c)))) {
-//		return std::move(c);
-//	}
-//	static storage copy_storage(storage&& s) noexcept(noexcept(storage::storage(std::move(s)))) {
-//		return std::move(s);
-//	}
+	template<typename Cleanup>
+	static auto
+	move_cleanup(Cleanup&& c) noexcept(noexcept(decltype(c)(std::move(c)))) {
+		static_assert(std::is_same<Cleanup, typename Resource::cleanup>::value);
+		return c;
+	}
+	template<typename Storage>
+	static auto
+	move_storage(Storage&& s) noexcept(noexcept(decltype(s)(std::move(s)))) {
+		static_assert(std::is_same<Storage, typename Resource::storage>::value);
+		return std::move(s);
+	}
 
 	static void swap(Resource& l, Resource& r) noexcept(false) {
 		using std::swap;
@@ -234,11 +241,36 @@ struct default_copy
 template<typename T, typename Resource>
 struct no_copy_yes_move : default_copy<T, Resource>
 {
-	using cleanup = typename Resource::cleanup;
-	using storage = typename Resource::storage;
+	template<typename U>
+	static auto copy_cleanup(U const& c) = delete;
+	template<typename U>
+	static auto copy_storage(U const& s) = delete;
 
-	static cleanup copy_cleanup(cleanup const& c) = delete;
-	static storage copy_storage(storage const& s) = delete;
+	no_copy_yes_move() = default;
+
+	no_copy_yes_move(no_copy_yes_move const&) = delete;
+	no_copy_yes_move(no_copy_yes_move&&) = default;
+
+	no_copy_yes_move& operator=(no_copy_yes_move const&) = delete;
+	no_copy_yes_move& operator=(no_copy_yes_move&&) = default;
+};
+
+
+template<typename T, typename Resource>
+struct no_copy_yes_move_and_nullify : no_copy_yes_move<T, Resource>
+{
+	using parent = default_copy<T, Resource>;
+	using traits = typename parent::traits;
+
+	static_assert(traits::is_nullable);
+
+	template<typename U>
+	static auto move_storage(U&& c) noexcept(noexcept(parent::move_storage(std::forward<U>(c)))) {
+		BOOST_SCOPE_EXIT_TPL(&c){
+			c.nullify();
+		} BOOST_SCOPE_EXIT_END
+		return parent::move_storage(std::forward<U>(c));
+	}
 };
 
 } // kq::resource::copy
@@ -254,13 +286,21 @@ auto main() -> int
 {
 	using namespace kq::resource;
 	using deleter = cleanup::function_deleter<void(int*), &please_delete>;
-	using R = resource<int, deleter::impl, storage::default_storage, copy::default_copy>;
-	R r{new int(42)};
+	using R = resource<int, deleter::impl, storage::default_storage, copy::no_copy_yes_move_and_nullify>;
+	R r1{new int(42)};
 
 	R r2{nullptr};
 
-	r2 = r;
+	DBG(sizeof(r1));
+	DBG(sizeof(void*));
 
+	DBG(r1.get());
+	DBG(r2.get());
+
+	r2 = move(r1);
+
+	DBG(r1.get());
+	DBG(r2.get());
 }
 
 //auto main() -> int

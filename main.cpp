@@ -43,8 +43,8 @@ constexpr int Width = 60;
 
 #define BARK cout << __PRETTY_FUNCTION__ << endl;
 
-//#include <fcntl.h>
-//#include <unistd.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 template<typename Func, Func* Function>
 struct FunctionDeleter
@@ -77,7 +77,7 @@ namespace kq::resource::traits
 {
 
 template<typename Trait>
-concept bool Nullable = Trait::is_nullable;
+concept bool Nullable = Trait::is_nullable == nullable::yes;
 
 } // kq::resource::traits
 
@@ -284,25 +284,53 @@ void please_delete(T* ptr)
 	delete ptr;
 }
 
+void please_close(int fd)
+{
+	cout << "please_close(" << fd << ")" << endl;
+	close(fd);
+}
+
 auto main() -> int
 {
 	using namespace kq::resource;
-	using deleter = cleanup::function_deleter<void(int*), &please_delete>;
-	using R = resource<int, deleter::impl, storage::default_storage, copy::no_copy_yes_move_and_nullify>;
-	R r1{new int(42)};
+	using deleter = cleanup::function_deleter<void(int), &please_close>;
 
-	R r2{nullptr};
+	using R = resource<
+		traits::handle_is_type<int, traits::nullable::yes, int, -1>,
+		deleter::impl,
+		storage::default_storage,
+		copy::no_copy_yes_move_and_nullify
+	>;
 
-	DBG(sizeof(r1));
-	DBG(sizeof(void*));
+	R r1{open("/dev/random", O_RDONLY)};
+	R r2;
 
-	DBG(r1.get());
-	DBG(r2.get());
+	DBG(*r1);
+	DBG(*r2);
 
-	r2 = move(r1);
+//	r2 = r1; // error
+	r2 = std::move(r1);
 
-	DBG(r1.get());
-	DBG(r2.get());
+	DBG(*r1);
+	DBG(*r2);
+
+
+//	using deleter = cleanup::function_deleter<void(int*), &please_delete>;
+//	using R = resource<int, deleter::impl, storage::default_storage, copy::no_copy_yes_move_and_nullify>;
+//	R r1{new int(42)};
+
+//	R r2{nullptr};
+
+//	DBG(sizeof(r1));
+//	DBG(sizeof(void*));
+
+//	DBG(r1.get());
+//	DBG(r2.get());
+
+//	r2 = move(r1);
+
+//	DBG(r1.get());
+//	DBG(r2.get());
 }
 
 //auto main() -> int

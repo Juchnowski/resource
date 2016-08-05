@@ -9,18 +9,44 @@ namespace kq::resource
 namespace traits
 {
 
+enum nullable
+{
+	no,
+	yes
+};
+
 template<typename T>
 struct default_traits
 {
 	using type = T;
 	using handle = type*;
-	static constexpr bool is_nullable = true;
+	static constexpr nullable is_nullable = nullable::yes;
 	static constexpr handle null = nullptr;
 
 	static type deref(handle h) noexcept(noexcept(*h))
 	{
 		return *h;
 	}
+};
+
+template<typename T, nullable Nullable = nullable::no, typename NullType = void*, NullType Null = nullptr>
+struct handle_is_type
+{
+	using type = T;
+	using handle = type;
+	static constexpr nullable is_nullable = Nullable;
+
+	static type deref(handle h) noexcept(noexcept(handle(h)))
+	{
+		return h;
+	}
+};
+
+template<typename T, T Null>
+struct handle_is_type<T, nullable::yes, T, Null> : handle_is_type<T,nullable::no>
+{
+	static constexpr nullable is_nullable = nullable::yes;
+	static constexpr typename handle_is_type::handle null = Null;
 };
 
 namespace detail
@@ -65,7 +91,8 @@ template<
 	template <typename,typename> typename,
 	template <typename,typename> typename,
 	template <typename,typename> typename,
-	typename>
+	typename
+>
 struct resource;
 
 
@@ -101,6 +128,9 @@ struct resource:
 
 	using traits = traits::get_traits<Type>;
 	using type = typename traits::type;
+
+	template<typename = std::enable_if_t<traits::is_nullable,void>>
+	explicit resource() : storage{traits::null} {}
 
 	template<typename T, typename Cleanup = cleanup, typename Copy = copy>
 	explicit resource(T&& t, Cleanup&& cl = cleanup{}, Copy&& cp = copy{}):

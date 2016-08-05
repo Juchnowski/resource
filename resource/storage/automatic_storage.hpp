@@ -25,19 +25,8 @@ struct automatic_storage
 		return traits::deref(data_);
 	}
 
-	struct is_valid_detail
-	{
-		template<typename U, typename V, typename = std::enable_if_t<traits::is_nullable,void>>
-		bool operator()(U&&, V&& handle) const noexcept {
-			return handle != traits::null;
-		}
-		bool operator()(...) const noexcept {
-			return true;
-		}
-	};
-
 	bool is_valid() const noexcept {
-		return is_valid_detail{}(traits{}, data_);
+		return typename detail::is_valid{}(traits{}, data_);
 	}
 
 	template<typename ImplDetail = std::enable_if_t<traits::is_nullable, void>>
@@ -47,6 +36,20 @@ struct automatic_storage
 
 private:
 	handle data_;
+
+	struct detail
+	{
+		struct is_valid
+		{
+			template<typename U, typename V, typename = std::enable_if_t<traits::is_nullable,void>>
+			bool operator()(U&&, V&& handle) const noexcept {
+				return handle != traits::null;
+			}
+			bool operator()(...) const noexcept {
+				return true;
+			}
+		};
+	};
 };
 
 } // kq::resource::storage

@@ -70,6 +70,7 @@ template<typename> struct DEBUG_TEMPLATE;
 
 #include "resource/resource.hpp"
 #include "resource/storage/default_storage.hpp"
+#include "resource/cleanup/function_deleter.hpp"
 
 //template<int N>
 //using Policy = template typename PolicyImpl<N>::Inner;
@@ -81,62 +82,6 @@ template<typename Trait>
 concept bool Nullable = Trait::is_nullable == nullable::yes;
 
 } // kq::resource::traits
-
-namespace kq::resource::cleanup
-{
-
-template<typename T, typename Resource>
-struct default_deleter
-{
-	using traits = traits::get_traits<T>;
-	using type = typename traits::type;
-
-	void clean(){
-		using storage = typename Resource::storage;
-		auto& full_type = static_cast<Resource&>(*this);
-		delete full_type.storage::get();
-		full_type.storage::nullify();
-	}
-};
-
-template<typename Func, Func* Function, bool RequireNullable = false>
-struct function_deleter
-{
-	struct maybe_nullify{
-		template<typename StoragePolicy>
-		auto operator()(StoragePolicy* s) const noexcept(noexcept(s->nullify())) -> decltype(s->nullify()){
-			return s->nullify();
-		}
-		void operator()(...) const noexcept {}
-	};
-
-	struct ensure_nullify{
-		template<typename StoragePolicy>
-		auto operator()(StoragePolicy* s) const noexcept(noexcept(s->nullify())) {
-			return s->nullify();
-		}
-	};
-
-	template<typename T, typename Resource>
-	struct impl
-	{
-		using traits = traits::get_traits<T>;
-
-		void clean() noexcept(noexcept(Function(std::declval<typename traits::handle>()))){
-			using storage = typename Resource::storage;
-			auto& full_type = static_cast<Resource&>(*this);
-			if(full_type.storage::is_valid()){
-				Function(full_type.storage::get());
-			}
-
-			using nullifier = std::conditional_t<RequireNullable, ensure_nullify, maybe_nullify>;
-
-			nullifier{}(static_cast<storage*>(&full_type));
-		}
-	};
-};
-
-} // kq::resource::cleanup
 
 namespace kq::resource::copy
 {

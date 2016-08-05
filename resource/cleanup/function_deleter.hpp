@@ -9,20 +9,24 @@ namespace kq::resource::cleanup
 template<typename Func, Func* Function, bool RequireNullable = false>
 struct function_deleter
 {
-	struct maybe_nullify{
-		template<typename StoragePolicy>
-		auto operator()(StoragePolicy* s) const noexcept(noexcept(s->nullify())) -> decltype(s->nullify()){
-			return s->nullify();
-		}
-		void operator()(...) const noexcept {}
+	struct detail
+	{
+		struct maybe_nullify{
+			template<typename StoragePolicy>
+			auto operator()(StoragePolicy* s) const noexcept(noexcept(s->nullify())) -> decltype(s->nullify()){
+				return s->nullify();
+			}
+			void operator()(...) const noexcept {}
+		};
+
+		struct ensure_nullify{
+			template<typename StoragePolicy>
+			auto operator()(StoragePolicy* s) const noexcept(noexcept(s->nullify())) {
+				return s->nullify();
+			}
+		};
 	};
 
-	struct ensure_nullify{
-		template<typename StoragePolicy>
-		auto operator()(StoragePolicy* s) const noexcept(noexcept(s->nullify())) {
-			return s->nullify();
-		}
-	};
 
 	template<typename T, typename Resource>
 	struct impl
@@ -36,7 +40,11 @@ struct function_deleter
 				Function(full_type.storage::get());
 			}
 
-			using nullifier = std::conditional_t<RequireNullable, ensure_nullify, maybe_nullify>;
+			using nullifier = std::conditional_t<
+				RequireNullable,
+				typename detail::ensure_nullify,
+				typename detail::maybe_nullify
+			>;
 
 			nullifier{}(static_cast<storage*>(&full_type));
 		}

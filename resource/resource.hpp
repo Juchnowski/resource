@@ -59,7 +59,9 @@ struct resource:
 		storage{std::forward<T>(t)},
 		cleanup{std::forward<Cleanup>(cl)},
 		copy{std::forward<Copy>(cp)}
-	{}
+	{
+		call_initialize(this);
+	}
 
 	resource(resource const& other):
 		storage(copy::copy_storage(static_cast<storage&>(other))),
@@ -89,10 +91,29 @@ struct resource:
 		return *this;
 	}
 
-	~resource() noexcept(noexcept(std::declval<resource>().cleanup::clean()))
+	~resource() noexcept(noexcept(resource::call_clean(std::declval<resource>())))
 	{
-		cleanup::clean();
+		call_clean(this);
 	}
+
+
+private:
+	template<typename T>
+	static auto call_initialize(T* t = nullptr) -> decltype(t->cleanup::initialize())
+	{
+		return t->cleanup::initialize();
+	}
+
+	static void call_initialize(...) noexcept {}
+
+	template<typename T>
+	static auto call_clean(T* t = nullptr) -> decltype(t->cleanup::clean())
+	{
+		return t->cleanup::clean();
+	}
+
+	static void call_clean(...) noexcept {}
+
 };
 
 template<

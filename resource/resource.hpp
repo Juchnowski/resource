@@ -17,7 +17,8 @@ struct default_traits
 	static constexpr bool is_nullable = true;
 	static constexpr handle null = nullptr;
 
-	static type deref(handle h) {
+	static type deref(handle h) noexcept(noexcept(*h))
+	{
 		return *h;
 	}
 };

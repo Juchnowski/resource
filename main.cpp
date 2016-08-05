@@ -71,13 +71,21 @@ template<typename> struct DEBUG_TEMPLATE;
 #include "resource/cleanup/function_deleter.hpp"
 #include "resource/copy/not_customized.hpp"
 #include "resource/copy/disable_copy_enable_move.hpp"
+#include "resource/copy/disable_copy_and_move.hpp"
 
-template<typename T>
-void please_delete(T* ptr)
+void test_fd();
+void test_malloc();
+void test_new();
+void test_mutex_locker();
+
+auto main() -> int
 {
-	cout << "please_delete: " << ptr << endl;
-	delete ptr;
+	test_fd();
+	test_new();
+	test_malloc();
+	test_mutex_locker();
 }
+
 
 void please_close(int fd)
 {
@@ -85,8 +93,9 @@ void please_close(int fd)
 	close(fd);
 }
 
-auto main() -> int
+void test_fd()
 {
+	BARK;
 	using namespace kq::resource;
 	using deleter = cleanup::function_deleter<void(int), &please_close>;
 
@@ -100,50 +109,162 @@ auto main() -> int
 	R r1{open("/dev/random", O_RDONLY)};
 	R r2;
 
-	DBG(*r1);
-	DBG(*r2);
+	static_assert(sizeof(R) == sizeof(int));
+
+	DBG(*r1); // 3 or something
+	DBG(*r2); // -1
 
 //	r2 = r1; // error
 	r2 = std::move(r1);
 
-	DBG(*r1);
-	DBG(*r2);
+	DBG(*r1); // -1
+	DBG(*r2); // previous *r1
 
+	// *r2 destructor calls please_close
+}
 
-//	using deleter = cleanup::function_deleter<void(int*), &please_delete>;
-//	using R = resource<int, deleter::impl, storage::default_storage, copy::no_copy_yes_move_and_nullify>;
-//	R r1{new int(42)};
+template<typename T>
+void please_delete(T* ptr)
+{
+	cout << "please_delete: " << ptr << endl;
+	delete ptr;
+}
 
-//	R r2{nullptr};
+void test_new()
+{
+	BARK;
+	using namespace kq::resource;
+	using deleter = cleanup::function_deleter<void(int*), &please_delete>;
+	using R = resource<int, deleter::impl, storage::default_storage, copy::disable_copy_enable_move_with_nullification>;
 
-//	DBG(sizeof(r1));
-//	DBG(sizeof(void*));
+	R r1{new int(42)};
+	R r2; // equal to R r2{nullptr}
 
-//	DBG(r1.get());
-//	DBG(r2.get());
+	static_assert(sizeof(R) == sizeof(int*));
 
-//	r2 = move(r1);
+	DBG(r1.get());
+	DBG(r2.get()); // nullptr
 
-//	DBG(r1.get());
-//	DBG(r2.get());
+//	r2 = r1; // error
+	r2 = move(r1);
+
+	DBG(r1.get()); // nullptr
+	DBG(r2.get());
+
+	// please_delete called only once, for the correct pointer
 }
 
 
+void please_free(void *ptr)
+{
+	cout << "please_free: " << ptr << endl;
+	free(ptr);
+}
+void test_malloc()
+{
+	BARK;
+	using namespace kq::resource;
+	using deleter = cleanup::function_deleter<void(void*), &please_free>;
+	using R = resource<void, deleter::impl, storage::default_storage, copy::disable_copy_enable_move_with_nullification>;
+
+	R r1{malloc(1024)};
+	R r2; // equal to R r2{nullptr}
+
+	static_assert(sizeof(R) == sizeof(void*));
+
+	DBG(r1.get());
+	DBG(r2.get()); // nullptr
+
+//	r2 = r1; // error
+	r2 = move(r1);
+
+	DBG(r1.get()); // nullptr
+	DBG(r2.get());
+
+	// please_free called only once, for the correct pointer
+}
+
+template<typename T, typename Resource>
+struct MutexLocker
+{
+	void initialize()
+	{
+		auto& full_type = static_cast<Resource&>(*this);
+		full_type->lock();
+	}
+
+	void clean()
+	{
+		auto& full_type = static_cast<Resource&>(*this);
+		full_type->unlock();
+	}
+};
+
+#include <boost/noncopyable.hpp>
+
+struct Mutex : boost::noncopyable
+{
+	void lock()
+	{
+		BARK;
+		DBG(this);
+	}
+
+	void unlock()
+	{
+		BARK;
+		DBG(this);
+	}
+};
+
+using nullable = kq::resource::traits::nullable;
+
+struct MutexTraits
+{
+	using type = Mutex&;
+	using handle = Mutex&;
+	using pointer = Mutex*;
+
+	static constexpr nullable is_nullable = nullable::no;
+
+	static type deref(handle h) noexcept
+	{
+		return h;
+	}
+
+	static pointer ptr(handle h) noexcept
+	{
+		return &h;
+	}
+};
+
+void test_mutex_locker()
+{
+	BARK;
+
+	using namespace kq::resource;
+
+	static_assert(traits::detail::is_trait_v<MutexTraits>);
+
+	using R = resource<
+		MutexTraits,
+		MutexLocker,
+		storage::default_storage,
+		copy::disable_copy_and_move
+	>;
 
 
+	Mutex m;
 
+	R r{m}; // lock
 
+//	auto r2 = r; // error
+//	auto r2 = std::move(r); // error
 
+	DBG(&m);
 
-
-
-
-
-
-
-
-
-
+	// unlock
+}
 
 
 

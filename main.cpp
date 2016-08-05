@@ -253,6 +253,7 @@ void test_mutex_locker()
 		copy::disable_copy_and_move
 	>;
 
+	static_assert(sizeof(R) == sizeof(Mutex*));
 
 	Mutex m;
 

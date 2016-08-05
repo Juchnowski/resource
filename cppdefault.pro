@@ -20,4 +20,6 @@ HEADERS += \
     resource/cleanup/default_deleter.hpp \
     resource/cleanup/function_deleter.hpp \
     resource/copy/not_customized.hpp \
-    resource/copy/disable_copy_enable_move.hpp
+    resource/copy/disable_copy_enable_move.hpp \
+    resource/copy/disable_copy_and_move.hpp \
+    resource/copy/default_copy.hpp

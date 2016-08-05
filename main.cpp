@@ -72,17 +72,6 @@ template<typename> struct DEBUG_TEMPLATE;
 #include "resource/copy/not_customized.hpp"
 #include "resource/copy/disable_copy_enable_move.hpp"
 
-//template<int N>
-//using Policy = template typename PolicyImpl<N>::Inner;
-
-namespace kq::resource::traits
-{
-
-template<typename Trait>
-concept bool Nullable = Trait::is_nullable == nullable::yes;
-
-} // kq::resource::traits
-
 template<typename T>
 void please_delete(T* ptr)
 {
@@ -138,27 +127,6 @@ auto main() -> int
 //	DBG(r1.get());
 //	DBG(r2.get());
 }
-
-//auto main() -> int
-//{
-////	auto n = open("/dev/random", O_RDONLY);
-
-////	close(n);
-
-//	using ptr_t = unique_ptr<void, decltype(&free)>;
-////	using ptr_del_t = unique_ptr<void, FunctionDeleter<void(void*),&::del>>;
-//	using ptr_del_t = unique_ptr<void, MAKE_FUNCTION_DELETER(del)>;
-
-//	ptr_t ptr{malloc(128), &free};
-//	ptr_del_t ptr_del{malloc(128)};
-
-//	DBG(ptr_del.get());
-
-//	DBG(sizeof(ptr_t));
-//	DBG(sizeof(ptr_del_t));
-//	DBG(sizeof(void*));
-//}
-
 
 
 

@@ -64,13 +64,13 @@ void del(void* ptr){
 	free(ptr);
 }
 
-#include <boost/scope_exit.hpp>
-
 template<typename> struct DEBUG_TEMPLATE;
 
 #include "resource/resource.hpp"
 #include "resource/storage/default_storage.hpp"
 #include "resource/cleanup/function_deleter.hpp"
+#include "resource/copy/not_customized.hpp"
+#include "resource/copy/disable_copy_enable_move.hpp"
 
 //template<int N>
 //using Policy = template typename PolicyImpl<N>::Inner;
@@ -82,95 +82,6 @@ template<typename Trait>
 concept bool Nullable = Trait::is_nullable == nullable::yes;
 
 } // kq::resource::traits
-
-namespace kq::resource::copy
-{
-
-template<typename T, typename Resource>
-struct default_copy
-{
-	using traits = traits::get_traits<T>;
-	using type = typename traits::type;
-
-//	using cleanup = typename Resource::cleanup;
-//	using storage = typename Resource::storage;
-
-	template<typename Cleanup>
-	static auto
-	copy_cleanup(Cleanup const& c) noexcept(noexcept(decltype(c)(c))) {
-		static_assert(std::is_same<Cleanup, typename Resource::cleanup>::value);
-		return c;
-	}
-	template<typename Storage>
-	static auto
-	copy_storage(Storage const& s) noexcept(noexcept(decltype(s)(s))) {
-		static_assert(std::is_same<Storage, typename Resource::storage>::value);
-		return s;
-	}
-
-	template<typename Cleanup>
-	static auto
-	move_cleanup(Cleanup&& c) noexcept(noexcept(decltype(c)(std::move(c)))) {
-		static_assert(std::is_same<Cleanup, typename Resource::cleanup>::value);
-		return c;
-	}
-	template<typename Storage>
-	static auto
-	move_storage(Storage&& s) noexcept(noexcept(decltype(s)(std::move(s)))) {
-		static_assert(std::is_same<Storage, typename Resource::storage>::value);
-		return std::move(s);
-	}
-
-	static void swap(Resource& l, Resource& r) noexcept(false) {
-		using std::swap;
-
-		using cleanup = typename Resource::cleanup;
-		using storage = typename Resource::storage;
-		using copy = typename Resource::copy;
-		// Resource::copy may be a class derived from default_copy
-
-		swap(static_cast<storage&>(l),static_cast<storage&>(r));
-		swap(static_cast<cleanup&>(l),static_cast<cleanup&>(r));
-		swap(static_cast<copy&>(l),static_cast<copy&>(r));
-	}
-};
-
-template<typename T, typename Resource>
-struct no_copy_yes_move : default_copy<T, Resource>
-{
-	template<typename U>
-	static auto copy_cleanup(U const& c) = delete;
-	template<typename U>
-	static auto copy_storage(U const& s) = delete;
-
-	no_copy_yes_move() = default;
-
-	no_copy_yes_move(no_copy_yes_move const&) = delete;
-	no_copy_yes_move(no_copy_yes_move&&) = default;
-
-	no_copy_yes_move& operator=(no_copy_yes_move const&) = delete;
-	no_copy_yes_move& operator=(no_copy_yes_move&&) = default;
-};
-
-
-template<typename T, typename Resource>
-struct no_copy_yes_move_and_nullify : no_copy_yes_move<T, Resource>
-{
-	using parent = default_copy<T, Resource>;
-	using traits = typename parent::traits;
-
-	static_assert(traits::is_nullable);
-
-	template<typename U>
-	static auto move_storage(U&& c) noexcept(noexcept(parent::move_storage(std::forward<U>(c)))) {
-		BOOST_SCOPE_EXIT_TPL(&c){
-			c.nullify();
-		} BOOST_SCOPE_EXIT_END
-		return parent::move_storage(std::forward<U>(c));
-	}
-};
-
-} // kq::resource::copy
 
 template<typename T>
 void please_delete(T* ptr)
@@ -194,7 +105,7 @@ auto main() -> int
 		traits::handle_is_type<int, traits::nullable::yes, int, -1>,
 		deleter::impl,
 		storage::default_storage,
-		copy::no_copy_yes_move_and_nullify
+		copy::disable_copy_enable_move_with_nullification
 	>;
 
 	R r1{open("/dev/random", O_RDONLY)};

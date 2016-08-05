@@ -18,4 +18,6 @@ HEADERS += \
     resource/storage/automatic_storage.hpp \
     resource/traits.hpp \
     resource/cleanup/default_deleter.hpp \
-    resource/cleanup/function_deleter.hpp
+    resource/cleanup/function_deleter.hpp \
+    resource/copy/not_customized.hpp \
+    resource/copy/disable_copy_enable_move.hpp

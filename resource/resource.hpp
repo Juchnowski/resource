@@ -105,17 +105,6 @@ void swap(resource<T,Cleanup, Storage, Copy>& l, resource<T,Cleanup, Storage, Co
 	resource<T,Cleanup, Storage, Copy>::copy::swap(l, r);
 }
 
-
-template<int N, typename T, typename U> struct PolicyN{};
-
-template<int N>
-struct PolicyImpl{
-	template<typename T, typename U>
-	struct Inner{
-		using type = PolicyN<N,T,U>;
-	};
-};
-
 } // namespace kq::resource
 
 #endif // RESOURCE_HPP

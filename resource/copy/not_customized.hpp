@@ -12,9 +12,6 @@ struct not_customized
 	using traits = traits::get_traits<T>;
 	using type = typename traits::type;
 
-//	using cleanup = typename Resource::cleanup;
-//	using storage = typename Resource::storage;
-
 	template<typename Cleanup>
 	static auto
 	copy_cleanup(Cleanup const& c) noexcept(noexcept(decltype(c)(c))) {
@@ -47,7 +44,7 @@ struct not_customized
 		using cleanup = typename Resource::cleanup;
 		using storage = typename Resource::storage;
 		using copy = typename Resource::copy;
-		// Resource::copy may be a class derived from default_copy
+		// Resource::copy may be a class derived from not_customized
 
 		swap(static_cast<storage&>(l),static_cast<storage&>(r));
 		swap(static_cast<cleanup&>(l),static_cast<cleanup&>(r));

@@ -25,12 +25,17 @@ struct automatic_storage
 		return traits::deref(data_);
 	}
 
+	decltype(auto) operator->() const {
+		return traits::ptr(data_);
+	}
+
 	bool is_valid() const noexcept {
 		return typename detail::is_valid{}(traits{}, data_);
 	}
 
-	template<typename ImplDetail = std::enable_if_t<traits::is_nullable, void>>
-	void nullify(ImplDetail* = nullptr) noexcept {
+	template<typename Traits = traits>
+	auto nullify() -> std::enable_if_t<Traits::is_nullable, void>
+	{
 		data_ = traits::null;
 	}
 

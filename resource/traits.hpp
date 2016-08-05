@@ -1,6 +1,8 @@
 #ifndef TRAITS_HPP
 #define TRAITS_HPP
 
+#include <type_traits>
+
 namespace kq::resource::traits
 {
 
@@ -15,12 +17,18 @@ struct default_traits
 {
 	using type = T;
 	using handle = type*;
+	using pointer = type*;
 	static constexpr nullable is_nullable = nullable::yes;
 	static constexpr handle null = nullptr;
 
 	static type deref(handle h) noexcept(noexcept(*h))
 	{
 		return *h;
+	}
+
+	static pointer ptr(handle h) noexcept
+	{
+		return h;
 	}
 };
 
@@ -29,12 +37,26 @@ struct handle_is_type
 {
 	using type = T;
 	using handle = type;
+	using pointer = type*;
 	static constexpr nullable is_nullable = Nullable;
 
 	static type deref(handle h) noexcept(noexcept(handle(h)))
 	{
 		return h;
 	}
+
+	static pointer ptr(handle& h) noexcept
+	{
+		return &h;
+	}
+
+	static
+	std::add_pointer_t<std::add_const_t<std::remove_pointer_t<pointer>>>
+	ptr(handle const& h) noexcept
+	{
+		return &h;
+	}
+
 };
 
 template<typename T, T Null>
@@ -50,7 +72,7 @@ template<typename T>
 struct is_trait
 {
 	template<typename U>
-	static std::true_type test(int, typename U::type* = nullptr);
+	static auto test(int) -> decltype((declval<typename U::type>(),std::true_type{}));
 
 	template<typename>
 	static std::false_type test(...);

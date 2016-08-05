@@ -51,7 +51,7 @@ struct resource:
 	using traits = traits::get_traits<Type>;
 	using type = typename traits::type;
 
-	template<typename = std::enable_if_t<traits::is_nullable,void>>
+	template<typename Traits = traits, typename = std::enable_if_t<Traits::is_nullable,void>>
 	explicit resource() : storage{traits::null} {}
 
 	template<typename T, typename Cleanup = cleanup, typename Copy = copy>

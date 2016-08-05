@@ -39,14 +39,18 @@ template<
 	template <typename,typename> typename CopyPolicy,
 	typename Helper = resource_helper<Type, CleanupPolicy, StoragePolicy, CopyPolicy>
 >
-struct resource:
+class resource:
 		Helper::Storage,
 		Helper::Cleanup,
 		Helper::Copy
 {
+public:
 	using cleanup = typename Helper::Cleanup;
 	using copy = typename Helper::Copy;
 	using storage = typename Helper::Storage;
+	friend cleanup;
+	friend copy;
+	friend storage;
 
 	using traits = traits::get_traits<Type>;
 	using type = typename traits::type;
@@ -96,6 +100,9 @@ struct resource:
 		call_clean(this);
 	}
 
+	using storage::operator*;
+	using storage::get;
+	using storage::operator->;
 
 private:
 	template<typename T>

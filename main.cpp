@@ -80,12 +80,13 @@ void test_mutex_locker();
 
 auto main() -> int
 {
-	test_fd();
-	test_new();
-	test_malloc();
-	test_mutex_locker();
+//	test_fd();
+//	test_new();
+//	test_malloc();
+//	test_mutex_locker();
 }
 
+//#if 0
 
 void please_close(int fd)
 {
@@ -268,7 +269,7 @@ void test_mutex_locker()
 }
 
 
-
+//#endif
 
 
 

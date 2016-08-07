@@ -11,7 +11,8 @@ namespace kq::resource::storage
 namespace detail
 {
 
-using nullable = typename traits::nullable;
+//using nullable = typename traits::nullable;
+typedef typename traits::nullable nullable;
 
 template<bool TypeAndHandleSame, bool HandleAndPointerSame, nullable IsNullable>
 struct default_select;

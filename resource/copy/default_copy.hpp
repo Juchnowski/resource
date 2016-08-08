@@ -2,6 +2,7 @@
 #define DEFAULT_COPY_HPP
 
 #include "disable_copy_and_move.hpp"
+#include "disable_copy_enable_move.hpp"
 
 namespace kq::resource::copy
 {
@@ -24,6 +25,13 @@ struct get_default_copy
 	static constexpr nullable is_nullable = traits::is_nullable;
 
 	using type = default_select<type_and_handle_are_the_same, handle_and_pointer_are_the_same, is_nullable>;
+};
+
+template<bool either>
+struct default_select<either, true, nullable::yes>
+{
+	template<typename T, typename Resource>
+	using impl = disable_copy_enable_move_with_nullification<T,Resource>;
 };
 
 template<bool TypeAndHandleSame, bool HandleAndPointerSame, nullable IsNullable>

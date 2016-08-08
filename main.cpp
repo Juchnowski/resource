@@ -103,7 +103,7 @@ void test_fd()
 	using R = resource<
 		traits::handle_is_type<int, traits::nullable::yes, int, -1>,
 		deleter::impl,
-		storage::default_storage,
+		storage::automatic_storage,
 		copy::disable_copy_enable_move_with_nullification
 	>;
 
@@ -136,7 +136,7 @@ void test_new()
 	BARK;
 	using namespace kq::resource;
 	using deleter = cleanup::function_deleter<void(int*), &please_delete>;
-	using R = resource<int, deleter::impl, storage::default_storage, copy::disable_copy_enable_move_with_nullification>;
+	using R = resource<int, deleter::impl, storage::automatic_storage, copy::disable_copy_enable_move_with_nullification>;
 
 	R r1{new int(42)};
 	R r2; // equal to R r2{nullptr}
@@ -166,7 +166,7 @@ void test_malloc()
 	BARK;
 	using namespace kq::resource;
 	using deleter = cleanup::function_deleter<void(void*), &please_free>;
-	using R = resource<void, deleter::impl, storage::default_storage, copy::disable_copy_enable_move_with_nullification>;
+	using R = resource<void, deleter::impl, storage::automatic_storage, copy::disable_copy_enable_move_with_nullification>;
 
 	R r1{malloc(1024)};
 	R r2; // equal to R r2{nullptr}
@@ -250,7 +250,7 @@ void test_mutex_locker()
 	using R = resource<
 		MutexTraits,
 		MutexLocker,
-		storage::default_storage,
+		storage::automatic_storage,
 		copy::disable_copy_and_move
 	>;
 

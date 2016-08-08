@@ -6,6 +6,27 @@
 namespace kq::resource::cleanup
 {
 
+namespace detail
+{
+template<bool IsArray = false>
+struct delete_caller
+{
+	template<typename T>
+	static void call(T* ptr){
+		delete ptr;
+	}
+};
+
+template<>
+struct delete_caller<true>
+{
+	template<typename T>
+	static void call(T* ptr){
+		delete[] ptr;
+	}
+};
+}
+
 template<typename T, typename Resource>
 struct delete_deleter
 {
@@ -15,7 +36,7 @@ struct delete_deleter
 	void clean(){
 		using storage = typename Resource::storage;
 		auto& full_type = static_cast<Resource&>(*this);
-		delete full_type.storage::get();
+		detail::delete_caller<std::is_array<T>::value>::call(full_type.storage::get());
 		full_type.storage::nullify();
 	}
 };

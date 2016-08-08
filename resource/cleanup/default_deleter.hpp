@@ -40,7 +40,7 @@ struct default_select<false, true, nullable::yes>
 } // detail
 
 template<typename T>
-using default_deleter = typename detail::get_default_deleter<T>::type;
+using default_deleter = detail::get_default_deleter<T>;
 
 } // kq::resource::cleanup
 

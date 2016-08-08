@@ -17,7 +17,7 @@ typedef typename traits::nullable nullable;
 template<bool TypeAndHandleSame, bool HandleAndPointerSame, nullable IsNullable>
 struct default_select;
 
-template<typename T, typename Resource>
+template<typename T>
 struct get_default_storage
 {
 	using traits = traits::get_traits<T>;
@@ -44,8 +44,8 @@ struct default_select<true, false, any>
 
 }
 
-template<typename T, typename Resource>
-using default_storage = detail::get_default_storage<T,Resource>;
+template<typename T>
+using default_storage = detail::get_default_storage<T>;
 
 } // kq::resource::storage
 

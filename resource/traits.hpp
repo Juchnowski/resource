@@ -32,6 +32,28 @@ struct default_traits
 	}
 };
 
+template<typename T>
+struct default_traits<T[]>
+{
+	using element_type = T;
+	using type = element_type[];
+	using handle = element_type*;
+	using pointer = element_type*;
+	static constexpr nullable is_nullable = nullable::yes;
+	static constexpr handle null = nullptr;
+
+	template<typename Index>
+	static decltype(auto) get_element(handle h, Index&& index)
+	{
+		return h[index];
+	}
+
+	static pointer ptr(handle h) noexcept
+	{
+		return h;
+	}
+};
+
 template<typename T, nullable Nullable = nullable::no, typename NullType = void*, NullType Null = nullptr>
 struct handle_is_type
 {

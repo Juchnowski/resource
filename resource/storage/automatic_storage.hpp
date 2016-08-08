@@ -29,6 +29,11 @@ struct automatic_storage
 		return traits::ptr(data_);
 	}
 
+	template<typename Index>
+	decltype(auto) operator[](Index&& index) const {
+		return traits::get_element(data_, std::forward<Index>(index));
+	}
+
 	bool is_valid() const noexcept {
 		return typename detail::is_valid{}(traits{}, data_);
 	}

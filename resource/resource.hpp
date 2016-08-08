@@ -6,6 +6,8 @@
 #include "traits.hpp"
 
 #include "cleanup/default_deleter.hpp"
+#include "copy/default_copy.hpp"
+#include "storage/default_storage.hpp"
 
 namespace kq::resource
 {
@@ -37,8 +39,8 @@ struct resource_helper {
 template<
 	typename Type,
 	template <typename,typename> typename CleanupPolicy = cleanup::default_deleter<Type>::type::template impl,
-	template <typename,typename> typename StoragePolicy,
-	template <typename,typename> typename CopyPolicy,
+	template <typename,typename> typename StoragePolicy = storage::default_storage<Type>::type::template impl,
+	template <typename,typename> typename CopyPolicy = copy::default_copy<Type>::type::template impl,
 	typename Helper = resource_helper<Type, CleanupPolicy, StoragePolicy, CopyPolicy>
 >
 class resource:

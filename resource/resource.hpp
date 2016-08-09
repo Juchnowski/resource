@@ -78,9 +78,9 @@ public:
 	{}
 
 	resource(resource&& other):
-		storage(copy::move_storage(static_cast<storage&&>(*this))),
-		storage(copy::move_cleanup(static_cast<cleanup&&>(*this))),
-		storage(std::move(static_cast<copy>(*this)))
+		storage(copy::move_storage(static_cast<storage&&>(other))),
+		cleanup(copy::move_cleanup(static_cast<cleanup&&>(other))),
+		copy(static_cast<copy&&>(other))
 	{}
 
 	resource& operator=(resource const& other) noexcept(false)

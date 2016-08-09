@@ -88,6 +88,26 @@ struct handle_is_type<T, nullable::yes, T, Null> : handle_is_type<T,nullable::no
 	static constexpr typename handle_is_type::handle null = Null;
 };
 
+template<typename T>
+struct reference
+{
+	using type = T&;
+	using handle = T&;
+	using pointer = T*;
+
+	static constexpr nullable is_nullable = nullable::no;
+
+	static type deref(handle h) noexcept
+	{
+		return h;
+	}
+
+	static pointer ptr(handle h) noexcept
+	{
+		return &h;
+	}
+};
+
 namespace detail
 {
 template<typename T>

@@ -29,6 +29,11 @@ struct Mutex : boost::noncopyable
 		DBG(this);
 	}
 
+	void foo() const noexcept
+	{
+		BARK;
+	}
+
 	void unlock()
 	{
 		BARK;
@@ -38,40 +43,21 @@ struct Mutex : boost::noncopyable
 
 using nullable = kq::resource::traits::nullable;
 
-struct MutexTraits
-{
-	using type = Mutex&;
-	using handle = Mutex&;
-	using pointer = Mutex*;
-
-	static constexpr nullable is_nullable = nullable::no;
-
-	static type deref(handle h) noexcept
-	{
-		return h;
-	}
-
-	static pointer ptr(handle h) noexcept
-	{
-		return &h;
-	}
-};
-
 void test_mutex_locker()
 {
 	BARK;
 
 	using namespace kq::resource;
 
-	static_assert(traits::detail::is_trait_v<MutexTraits>);
+	static_assert(traits::detail::is_trait_v<traits::reference<Mutex>>);
 
-	using Res = resource<MutexTraits,MutexLocker>;
+	using Res = resource<traits::reference<Mutex>,MutexLocker>;
 
 	static_assert(
 		std::is_same<
 			  Res,
 			  resource<
-				MutexTraits,
+				traits::reference<Mutex>,
 				MutexLocker,
 				storage::automatic_storage,
 				copy::disable_copy_and_move
@@ -84,6 +70,8 @@ void test_mutex_locker()
 	Mutex m;
 
 	Res r{m}; // lock
+
+	r->foo();
 
 //	auto r2 = r; // error
 //	auto r2 = std::move(r); // error

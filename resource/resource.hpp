@@ -62,26 +62,32 @@ public:
 	template<typename Traits = traits, typename = std::enable_if_t<Traits::is_nullable,void>>
 	explicit resource() : storage{traits::null} {}
 
-	template<typename T, typename Cleanup = cleanup, typename Copy = copy>
-	explicit resource(T&& t, Cleanup&& cl = cleanup{}, Copy&& cp = copy{}):
-		storage{std::forward<T>(t)},
-		cleanup{std::forward<Cleanup>(cl)},
-		copy{std::forward<Copy>(cp)}
+	template<
+		typename First,
+		typename... Params,
+		typename BareFirst = std::remove_cv_t<std::remove_reference_t<First>>,
+		typename = std::enable_if_t<
+				!std::is_base_of<std::true_type,BareFirst>::value &&
+				!std::is_base_of<std::false_type,BareFirst>::value,
+			void
+		>
+	>
+	explicit resource(First&& first, Params&&... params):
+		resource(
+			std::is_same<std::remove_cv_t<std::remove_reference_t<First>>, resource>{},
+			std::forward<First>(first),
+			std::forward<Params>(params)...
+		)
 	{
-		call_initialize(this);
 	}
 
-	resource(resource const& other):
-		storage(copy::copy_storage(static_cast<storage&>(other))),
-		cleanup(copy::copy_cleanup(static_cast<cleanup&>(other))),
-		copy(other)
-	{}
-
-	resource(resource&& other):
-		storage(copy::move_storage(static_cast<storage&&>(other))),
-		cleanup(copy::move_cleanup(static_cast<cleanup&&>(other))),
-		copy(static_cast<copy&&>(other))
-	{}
+	// the template above doesn't cover this, because copy constructor gets
+	// implicitly explicitly deleted (implicitly declared by the compiler as
+	// deleted)
+	explicit resource(resource const& other):
+		resource(std::true_type{}, other)
+	{
+	}
 
 	resource& operator=(resource const& other) noexcept(false)
 	{
@@ -111,6 +117,30 @@ public:
 	using storage::nullify;
 
 private:
+
+	template<typename T, typename Cleanup = cleanup, typename Copy = copy>
+	resource(std::false_type, T&& t, Cleanup&& cl = cleanup{}, Copy&& cp = copy{}):
+		storage{std::forward<T>(t)},
+		cleanup{std::forward<Cleanup>(cl)},
+		copy{std::forward<Copy>(cp)}
+	{
+		call_initialize(this);
+	}
+
+	resource(std::true_type, resource const& other):
+		storage(copy::copy_storage(static_cast<storage const&>(other))),
+		cleanup(copy::copy_cleanup(static_cast<cleanup const&>(other))),
+		copy(other)
+	{
+	}
+
+	resource(std::true_type, resource&& other):
+		storage(copy::move_storage(static_cast<storage&&>(other))),
+		cleanup(copy::move_cleanup(static_cast<cleanup&&>(other))),
+		copy(static_cast<copy&&>(other))
+	{
+	}
+
 	template<typename T>
 	static auto call_initialize(T* t = nullptr) -> decltype(t->cleanup::initialize())
 	{

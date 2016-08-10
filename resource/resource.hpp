@@ -21,27 +21,18 @@ template<
 >
 struct resource;
 
-
-template<
-	typename Type,
-	template <typename,typename> typename CleanupPolicy,
-	template <typename,typename> typename StoragePolicy,
-	template <typename,typename> typename CopyPolicy
->
-struct resource_helper {
-	using This = resource_helper<Type, CleanupPolicy, StoragePolicy, CopyPolicy>;
-
-	using Cleanup = CleanupPolicy<Type,resource<Type,CleanupPolicy,StoragePolicy,CopyPolicy, This>>;
-	using Copy = CopyPolicy<Type,resource<Type,CleanupPolicy,StoragePolicy,CopyPolicy, This>>;
-	using Storage = StoragePolicy<Type,resource<Type,CleanupPolicy,StoragePolicy,CopyPolicy, This>>;
-};
+namespace detail
+{
+template<typename,template<typename,typename>typename,template<typename,typename>typename,template<typename,typename>typename>
+struct resource_helper;
+}
 
 template<
 	typename Type,
 	template <typename,typename> typename CleanupPolicy = cleanup::default_deleter<Type>::type::template impl,
 	template <typename,typename> typename StoragePolicy = storage::default_storage<Type>::type::template impl,
 	template <typename,typename> typename CopyPolicy = copy::default_copy<Type>::type::template impl,
-	typename Helper = resource_helper<Type, CleanupPolicy, StoragePolicy, CopyPolicy>
+	typename Helper = detail::resource_helper<Type, CleanupPolicy, StoragePolicy, CopyPolicy>
 >
 class resource:
 		Helper::Storage,
@@ -167,6 +158,23 @@ template<
 >
 void swap(resource<T,Cleanup, Storage, Copy>& l, resource<T,Cleanup, Storage, Copy>& r){
 	resource<T,Cleanup, Storage, Copy>::copy::swap(l, r);
+}
+
+namespace detail
+{
+template<
+	typename Type,
+	template <typename,typename> typename CleanupPolicy,
+	template <typename,typename> typename StoragePolicy,
+	template <typename,typename> typename CopyPolicy
+>
+struct resource_helper {
+	using This = resource_helper<Type, CleanupPolicy, StoragePolicy, CopyPolicy>;
+
+	using Cleanup = CleanupPolicy<Type,resource<Type,CleanupPolicy,StoragePolicy,CopyPolicy, This>>;
+	using Copy = CopyPolicy<Type,resource<Type,CleanupPolicy,StoragePolicy,CopyPolicy, This>>;
+	using Storage = StoragePolicy<Type,resource<Type,CleanupPolicy,StoragePolicy,CopyPolicy, This>>;
+};
 }
 
 } // namespace kq::resource

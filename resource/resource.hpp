@@ -89,7 +89,7 @@ public:
 	{
 	}
 
-	resource& operator=(resource const& other) noexcept(false)
+	resource& operator=(resource const& other) & noexcept(false)
 	{
 		static_cast<storage&>(*this) = copy::copy_storage(static_cast<storage const&>(other));
 		static_cast<cleanup&>(*this) = copy::copy_cleanup(static_cast<cleanup const&>(other));
@@ -97,7 +97,7 @@ public:
 		return *this;
 	}
 
-	resource& operator=(resource&& other) noexcept(false)
+	resource& operator=(resource&& other) & noexcept(false)
 	{
 		static_cast<storage&>(*this) = copy::move_storage(static_cast<storage&&>(other));
 		static_cast<cleanup&>(*this) = copy::move_cleanup(static_cast<cleanup&&>(other));

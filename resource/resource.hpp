@@ -23,7 +23,12 @@ struct resource;
 
 namespace detail
 {
-template<typename,template<typename,typename>typename,template<typename,typename>typename,template<typename,typename>typename>
+template<
+	typename,
+	template <typename,typename> typename,
+	template <typename,typename> typename,
+	template <typename,typename> typename
+>
 struct resource_helper;
 }
 

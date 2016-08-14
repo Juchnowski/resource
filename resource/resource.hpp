@@ -45,18 +45,18 @@ class resource:
 		Helper::Copy
 {
 public:
-	using cleanup = typename Helper::Cleanup;
-	using copy = typename Helper::Copy;
-	using storage = typename Helper::Storage;
-	friend cleanup;
-	friend copy;
-	friend storage;
+	using cleanup_p = typename Helper::Cleanup;
+	using copy_p = typename Helper::Copy;
+	using storage_p = typename Helper::Storage;
+	friend cleanup_p;
+	friend copy_p;
+	friend storage_p;
 
 	using traits = traits::get_traits<Type>;
 	using type = typename traits::type;
 
 	template<typename Traits = traits, typename = std::enable_if_t<Traits::is_nullable,void>>
-	explicit resource() : storage{traits::null} {}
+	explicit resource() : storage_p{traits::null} {}
 
 	template<
 		typename First,
@@ -87,17 +87,17 @@ public:
 
 	resource& operator=(resource const& other) & noexcept(false)
 	{
-		static_cast<storage&>(*this) = copy::copy_storage(static_cast<storage const&>(other));
-		static_cast<cleanup&>(*this) = copy::copy_cleanup(static_cast<cleanup const&>(other));
-		static_cast<copy&>(*this) = static_cast<copy const&>(other);
+		static_cast<storage_p&>(*this) = copy_p::copy_storage(static_cast<storage_p const&>(other));
+		static_cast<cleanup_p&>(*this) = copy_p::copy_cleanup(static_cast<cleanup_p const&>(other));
+		static_cast<copy_p&>(*this) = static_cast<copy_p const&>(other);
 		return *this;
 	}
 
 	resource& operator=(resource&& other) & noexcept(false)
 	{
-		static_cast<storage&>(*this) = copy::move_storage(static_cast<storage&&>(other));
-		static_cast<cleanup&>(*this) = copy::move_cleanup(static_cast<cleanup&&>(other));
-		static_cast<copy&>(*this) = static_cast<copy&&>(other);
+		static_cast<storage_p&>(*this) = copy_p::move_storage(static_cast<storage_p&&>(other));
+		static_cast<cleanup_p&>(*this) = copy_p::move_cleanup(static_cast<cleanup_p&&>(other));
+		static_cast<copy_p&>(*this) = static_cast<copy_p&&>(other);
 		return *this;
 	}
 
@@ -106,49 +106,49 @@ public:
 		call_clean(this);
 	}
 
-	using storage::operator*;
-	using storage::get;
-	using storage::operator->;
-	using storage::is_valid;
-	using storage::nullify;
+	using storage_p::operator*;
+	using storage_p::get;
+	using storage_p::operator->;
+	using storage_p::is_valid;
+	using storage_p::nullify;
 
 private:
 
-	template<typename T, typename Cleanup = cleanup, typename Copy = copy>
-	resource(std::false_type, T&& t, Cleanup&& cl = cleanup{}, Copy&& cp = copy{}):
-		storage{std::forward<T>(t)},
-		cleanup{std::forward<Cleanup>(cl)},
-		copy{std::forward<Copy>(cp)}
+	template<typename T, typename Cleanup = cleanup_p, typename Copy = copy_p>
+	resource(std::false_type, T&& t, Cleanup&& cl = Cleanup{}, Copy&& cp = Copy{}):
+		storage_p{std::forward<T>(t)},
+		cleanup_p{std::forward<Cleanup>(cl)},
+		copy_p{std::forward<Copy>(cp)}
 	{
 		call_initialize(this);
 	}
 
 	resource(std::true_type, resource const& other):
-		storage(copy::copy_storage(static_cast<storage const&>(other))),
-		cleanup(copy::copy_cleanup(static_cast<cleanup const&>(other))),
-		copy(other)
+		storage_p(copy_p::copy_storage(static_cast<storage_p const&>(other))),
+		cleanup_p(copy_p::copy_cleanup(static_cast<cleanup_p const&>(other))),
+		copy_p(other)
 	{
 	}
 
 	resource(std::true_type, resource&& other):
-		storage(copy::move_storage(static_cast<storage&&>(other))),
-		cleanup(copy::move_cleanup(static_cast<cleanup&&>(other))),
-		copy(static_cast<copy&&>(other))
+		storage_p(copy_p::move_storage(static_cast<storage_p&&>(other))),
+		cleanup_p(copy_p::move_cleanup(static_cast<cleanup_p&&>(other))),
+		copy_p(static_cast<copy_p&&>(other))
 	{
 	}
 
 	template<typename T>
-	static auto call_initialize(T* t = nullptr) -> decltype(t->cleanup::initialize())
+	static auto call_initialize(T* t = nullptr) -> decltype(t->cleanup_p::initialize())
 	{
-		return t->cleanup::initialize();
+		return t->cleanup_p::initialize();
 	}
 
 	static void call_initialize(...) noexcept {}
 
 	template<typename T>
-	static auto call_clean(T* t = nullptr) -> decltype(t->cleanup::clean())
+	static auto call_clean(T* t = nullptr) -> decltype(t->cleanup_p::clean())
 	{
-		return t->cleanup::clean();
+		return t->cleanup_p::clean();
 	}
 
 	static void call_clean(...) noexcept {}

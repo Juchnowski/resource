@@ -34,10 +34,10 @@ struct function_deleter
 		using traits = traits::get_traits<T>;
 
 		void clean() noexcept(noexcept(Function(std::declval<typename traits::handle>()))){
-			using storage = typename Resource::storage;
+			using storage_p = typename Resource::storage_p;
 			auto& full_type = static_cast<Resource&>(*this);
-			if(full_type.storage::is_valid()){
-				Function(full_type.storage::get());
+			if(full_type.storage_p::is_valid()){
+				Function(full_type.storage_p::get());
 			}
 
 			using nullifier = std::conditional_t<
@@ -46,7 +46,7 @@ struct function_deleter
 				typename detail::maybe_nullify
 			>;
 
-			nullifier{}(static_cast<storage*>(&full_type));
+			nullifier{}(static_cast<storage_p*>(&full_type));
 		}
 	};
 };

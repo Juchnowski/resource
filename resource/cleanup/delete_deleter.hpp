@@ -33,7 +33,7 @@ struct delete_deleter
 	using traits = traits::get_traits<T>;
 	using type = typename traits::type;
 
-	void clean(){
+	void cleanup(){
 		using storage_p = typename Resource::storage_p;
 		auto& full_type = static_cast<Resource&>(*this);
 		detail::delete_caller<std::is_array<T>::value>::call(full_type.storage_p::get());

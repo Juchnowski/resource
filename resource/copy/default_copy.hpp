@@ -27,8 +27,8 @@ struct get_default_copy
 	using type = default_select<type_and_handle_are_the_same, handle_and_pointer_are_the_same, is_nullable>;
 };
 
-template<bool either>
-struct default_select<either, true, nullable::yes>
+template<bool either1, bool either2>
+struct default_select<either1, either2, nullable::yes>
 {
 	template<typename T, typename Resource>
 	using impl = disable_copy_enable_move_with_nullification<T,Resource>;

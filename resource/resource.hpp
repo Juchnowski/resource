@@ -146,9 +146,9 @@ private:
 	static void call_initialize(...) noexcept {}
 
 	template<typename T>
-	static auto call_clean(T* t = nullptr) -> decltype(t->cleanup_p::clean())
+	static auto call_clean(T* t = nullptr) -> decltype(t->cleanup_p::cleanup())
 	{
-		return t->cleanup_p::clean();
+		return t->cleanup_p::cleanup();
 	}
 
 	static void call_clean(...) noexcept {}

@@ -17,6 +17,7 @@ void test_new()
 	using deleter = cleanup::function_deleter<void(int*), &please_delete>;
 	using Res = resource<int, deleter::impl>;
 
+	static_assert(std::is_same<resource<int>,resource<int, cleanup::delete_deleter, storage::automatic_storage, copy::disable_copy_enable_move_with_nullification>>::value);
 	static_assert(std::is_same<Res,resource<int, deleter::impl, storage::automatic_storage, copy::disable_copy_enable_move_with_nullification>>::value);
 
 	Res r1{new int(42)};

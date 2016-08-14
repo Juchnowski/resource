@@ -13,7 +13,7 @@ struct MutexLocker
 		full_type->lock();
 	}
 
-	void clean()
+	void cleanup()
 	{
 		auto& full_type = static_cast<Resource&>(*this);
 		full_type->unlock();

@@ -18,17 +18,27 @@ void test_fd()
 	using namespace kq::resource;
 	using deleter = cleanup::function_deleter<void(int), &please_close>;
 
-	using R = resource<
+	using Res = resource<
 		traits::handle_is_type<int, traits::nullable::yes, int, -1>,
-		deleter::impl,
-		storage::automatic_storage,
-		copy::disable_copy_enable_move_with_nullification
+		deleter::impl
 	>;
 
-	R r1{open("/dev/random", O_RDONLY)};
-	R r2;
+	static_assert(
+		std::is_same<
+			Res,
+			resource<
+				traits::handle_is_type<int, traits::nullable::yes, int, -1>,
+				deleter::impl,
+				storage::automatic_storage,
+				copy::disable_copy_enable_move_with_nullification
+			>
+		>::value
+	);
 
-	static_assert(sizeof(R) == sizeof(int));
+	Res r1{open("/dev/random", O_RDONLY)};
+	Res r2;
+
+	static_assert(sizeof(Res) == sizeof(int));
 
 	DBG(*r1); // 3 or something
 	DBG(*r2); // -1

@@ -33,7 +33,7 @@ struct function_deleter
 	{
 		using traits = traits::get_traits<T>;
 
-		void clean() noexcept(noexcept(Function(std::declval<typename traits::handle>()))){
+		void cleanup() noexcept(noexcept(Function(std::declval<typename traits::handle>()))){
 			using storage_p = typename Resource::storage_p;
 			auto& full_type = static_cast<Resource&>(*this);
 			if(full_type.storage_p::is_valid()){

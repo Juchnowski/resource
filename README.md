@@ -1,6 +1,7 @@
 # Universal resource handling class template for C++ 
-This is the unviersal class resource class. All init and cleanup routines can be expressed as 
-policies, with a good defaults already provided.
+This is the unviersal class resource class. All init, cleanup routines can be expressed as 
+policies, with good defaults already provided. Policies can also be used to choose storage
+and copy behaviour.
 
 ## replacing `unique_ptr`
 ```cpp
@@ -36,7 +37,7 @@ Res ptr2; // ptr2{nullptr}
 // ptr2 = ptr1; // error
 ptr2 = std::move(ptr1); // ok
 
-// ptr2 gets freed at the end of scope
+// ptr2 gets free()d at the end of scope
 ```
 
 ## With your file descriptor RAII class

@@ -110,18 +110,12 @@ struct reference
 
 namespace detail
 {
+
+template<typename T, typename = std::void_t<>>
+struct is_trait : std::false_type {};
+
 template<typename T>
-struct is_trait
-{
-	template<typename U>
-	static auto test(int) -> decltype((declval<typename U::type>(),std::true_type{}));
-
-	template<typename>
-	static std::false_type test(...);
-
-	using type = decltype(test<T>(0));
-	static constexpr bool value = std::is_same<type, std::true_type>::value;
-};
+struct is_trait<T, std::void_t<typename T::type>> : std::true_type {};
 
 template<typename T>
 constexpr bool is_trait_v = is_trait<T>::value;

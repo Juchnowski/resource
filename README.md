@@ -1,8 +1,8 @@
-= Universal resource handling class template for C++ 
+# Universal resource handling class template for C++ 
 This is the unviersal class resource class. All init and cleanup routines can be expressed as 
 policies, with a good defaults already provided.
 
-== replacing `unique_ptr`
+## replacing `unique_ptr`
 ```cpp
 using Res = resource<int>;
 Res ptr1{new int{42}};
@@ -14,7 +14,7 @@ ptr2 = std::move(ptr1); // ok
 // ptr2 gets deleted at the end of scope
 ```
 
-=== with an array
+### with an array
 ```cpp
 using Res = resource<int[]>;
 Res ptr1{new int[42]};
@@ -26,7 +26,7 @@ ptr2 = std::move(ptr1); // ok
 // ptr2 gets delete[]d at the end of scope
 ```
 
-=== with custom deleter
+### with custom deleter
 ```cpp
 using deleter = cleanup::function_deleter<void(void*), &free>;
 using Res = resource<void, deleter::impl>;
@@ -39,7 +39,7 @@ ptr2 = std::move(ptr1); // ok
 // ptr2 gets freed at the end of scope
 ```
 
-== With your file descriptor RAII class
+## With your file descriptor RAII class
 `unique_ptr` cannot do this - at least not without pointless allocation. 
 ```cpp
 using deleter = cleanup::function_deleter<int(int), &close>;
@@ -59,10 +59,10 @@ r2 = std::move(r1);
 // r2 gets close(2)d.
 ```
 
-= Why? My `unique_ptr` and `lock_guard` are better/good enough?
+# Why? My `unique_ptr` and `lock_guard` are better/good enough?
 Most likely you're right. This was is a programming exercise.
 
-= License
+# License
 If you really want to use this, look [here](LICENSE.md).
 
 

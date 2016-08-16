@@ -48,7 +48,7 @@ struct automatic_storage
 	auto release() -> std::enable_if_t<Traits::is_nullable, handle>
 	{
 		auto tmp = data_;
-		data_ = traits::null;
+		nullify();
 		return tmp;
 	}
 

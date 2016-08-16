@@ -111,6 +111,7 @@ public:
 	using storage_p::operator->;
 	using storage_p::is_valid;
 	using storage_p::nullify;
+	using storage_p::release;
 
 private:
 

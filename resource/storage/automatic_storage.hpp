@@ -44,8 +44,7 @@ struct automatic_storage
 		data_ = traits::null;
 	}
 
-	template<typename Traits = traits>
-	auto release() -> std::enable_if_t<Traits::is_nullable, handle>
+	auto release()
 	{
 		auto tmp = data_;
 		nullify();

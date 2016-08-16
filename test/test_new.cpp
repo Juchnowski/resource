@@ -31,6 +31,8 @@ void test_new()
 //	r2 = r1; // error
 	r2 = move(r1);
 
+	DBG(r2.release());
+
 	DBG(r1.get()); // nullptr
 	DBG(r2.get());
 
